@@ -1,8 +1,7 @@
 # utility_funcitons -------------------------------------------------------
 
 import_rda_file <-
-  function(file =NULL) {
-
+  function(file = NULL) {
     if (file %>% is_null()) {
       stop("Please enter a file path")
     }
@@ -15,7 +14,7 @@ import_rda_file <-
 
 
 curl_url <-
-  function(url = "https://github.com/abresler/FRED_Dictionaries/blob/master/data/fred_series_data.rda?raw=true"){
+  function(url = "https://github.com/abresler/FRED_Dictionaries/blob/master/data/fred_series_data.rda?raw=true") {
     con <-
       url %>%
       curl::curl()
@@ -38,15 +37,33 @@ get_data_df <- function() {
   )
 }
 
-#' import nazi data
+#' Import Nazi cached  data
 #'
-#' @param table_name
-#' @import httr curl tidyr rvest dplyr stringr lubridate xml2 purrr stringi readr
-#' @return
+#' Returns a data frame or a visual
+#' trelliscope display of the specified table.
+#' The table contains data scraped on February 1st, 2017
+#'
+#' @param table_name the name of the table to import options are \itemize{
+#' \item \code{all}: all tidy in wide form
+#' \item \code{names}: unique nazi names
+#' \item \code{items}: long data frame of columns that contain multiple items
+#' }
+#' @param visualize_results if \code{TRUE} returns a visual trelliscope display of the results
+#' @param title title of the trelliscope
+#' @param self_contained if \code{TRUE} htmlwidget is self-contained
+#' @import httr curl tidyr rvest dplyr stringr lubridate xml2 purrr stringi readr trelliscopejs
+#' @return a \code{data_frame}
 #' @export
 #' @examples
-import_nazi_data <-
-  function(table_name = 'all') {
+#' \dontrun{
+#' nazihuntR::import_nazis(table_name = 'all')
+#' nazihuntR::import_nazis(table_name = 'items')
+#' }
+import_nazis <-
+  function(table_name = 'all',
+           visualize_results = FALSE,
+           self_contained = FALSE,
+           title = NULL) {
     df_tables <-
       get_data_df()
 
@@ -55,11 +72,20 @@ import_nazi_data <-
     }
     table_name <-
       table_name %>%
-      str_to_lower()
+      stringr::str_to_lower()
     url <- df_tables %>%
       filter(nameFile == table_name) %>%
       .$urlFile
-    curl_url(url = url)
+    data <-
+      curl_url(url = url)
+
+    if (visualize_results) {
+      trelliscope <-
+        data %>%
+        visualize_nazis(self_contained = self_contained, title = title)
+      return(trelliscope)
+    }
+    return(data)
   }
 
 get_class_df <-
@@ -78,16 +104,29 @@ get_class_df <-
     return(class_df)
   }
 
-#' tidy counts
+#' Tidy count columns
 #'
-#' @param data
-#' @param column_keys
-#' @param bind_to_original_df
+#' This function finds columns that contain
+#' count data [multiple items] and tidies the columns
+#' into long form.
 #'
-#' @return
+#' @param data a \code{data_frame}
+#' @param column_keys the unique column keys \code{nameActualPerson} and \code{urlBiography}
+#' selected by default
+#' @param bind_to_original_df if \code{TRUE} binds the results back the original data as a nested data frame
+#'
+#' @return a if \code{bind_to_original_df} is \code{TRUE} a nested data frame else
+#' a data frame
 #' @export
-#'
+#' @import purrr dplyr stringr stringi formattable
 #' @examples
+#' \dontrun{
+#' import_nazis(table_name = 'all', visualize_results = FALSE) %>%
+#' tidy_counts(column_keys = c('nameActualPerson', 'urlBiography'),
+#' bind_to_original_df = TRUE)
+#' }
+
+
 tidy_counts <-
   function(data,
            column_keys = c('nameActualPerson', 'urlBiography'),
@@ -226,7 +265,8 @@ get_page_count <- function() {
     suppressWarnings()
 
   page <-
-    list('http://pamiec.pl/pa/form/60,Zaloga-SS-KL-Auschwitz.html?page=',page_count) %>%
+    list('http://pamiec.pl/pa/form/60,Zaloga-SS-KL-Auschwitz.html?page=',
+         page_count) %>%
     purrr::reduce(paste0) %>%
     read_html()
 
@@ -245,21 +285,43 @@ get_page_count <- function() {
 
 get_name_df <-
   function() {
-    data_frame(nameItem = c("Date of Birth", "Place of Birth", "Nationality", "Education Background",
-                            "Occupation", "NSDAP Affiliation", "Allgemeine SS Affiliation",
-                            "SS Membership Number", "Professional, Voluntary Military Service in SS Units",
-                            "Service in SS-Verfügungstruppen, Totenkopfverbände, Waffen-SS",
-                            "Affiliation to other organisations", "Military service till 1920",
-                            "Military service in other countries", "Military service in Reichswehr, Wehrmacht",
-                            "Awarded decorations, distinctions, medals", "urlDocumentDetails"),
-               nameActual  = c("dateBirth", "locationBirth", "countryNationality", "descriptionEducation",
-                               "descriptionOccupation", "descriptionNSDAPAffiliation", "descriptionAllgemeineSSAffiliation",
-                               "idSS", "typeServiceSS",
-                               "descriptionServiceWaffenSS",
-                               "descritionAffiliationOtherOrganizations", "descriptionServicePrior1920",
-                               "descriptionServiceOtherCountries", "descriptionServiceWehrmacht",
-                               "descriptionMedals", "urlDocumentDetails"
-               )
+    data_frame(
+      nameItem = c(
+        "Date of Birth",
+        "Place of Birth",
+        "Nationality",
+        "Education Background",
+        "Occupation",
+        "NSDAP Affiliation",
+        "Allgemeine SS Affiliation",
+        "SS Membership Number",
+        "Professional, Voluntary Military Service in SS Units",
+        "Service in SS-Verfügungstruppen, Totenkopfverbände, Waffen-SS",
+        "Affiliation to other organisations",
+        "Military service till 1920",
+        "Military service in other countries",
+        "Military service in Reichswehr, Wehrmacht",
+        "Awarded decorations, distinctions, medals",
+        "urlDocumentDetails"
+      ),
+      nameActual  = c(
+        "dateBirth",
+        "locationBirth",
+        "countryNationality",
+        "descriptionEducation",
+        "descriptionOccupation",
+        "descriptionNSDAPAffiliation",
+        "descriptionAllgemeineSSAffiliation",
+        "idSS",
+        "typeServiceSS",
+        "descriptionServiceWaffenSS",
+        "descritionAffiliationOtherOrganizations",
+        "descriptionService1920Prior",
+        "descriptionServiceOtherCountries",
+        "descriptionServiceWehrmacht",
+        "descriptionMedals",
+        "urlDocumentDetails"
+      )
     )
   }
 
@@ -269,7 +331,8 @@ get_all_page_urls <-
       get_page_count()
 
     urls <-
-      list('http://pamiec.pl/pa/form/60,Zaloga-SS-KL-Auschwitz.html?page=',1:page_count) %>%
+      list('http://pamiec.pl/pa/form/60,Zaloga-SS-KL-Auschwitz.html?page=',
+           1:page_count) %>%
       purrr::reduce(paste0)
     return(urls)
   }
@@ -296,33 +359,39 @@ parse_search_page <-
         page %>%
         html_nodes('.strz a') %>%
         html_attr('href') %>%
-        paste0('http://pamiec.pl',.)
+        paste0('http://pamiec.pl', .)
 
       images <- page %>%
         html_nodes('.fotoSS') %>%
         html_attr('src') %>%
-        paste0('http://pamiec.pl',.)
+        paste0('http://pamiec.pl', .)
 
       data <-
-        data_frame(namePerson = person,
-                   urlImage = images,
-                   urlBiography = url_person)
+        data_frame(
+          namePerson = person,
+          urlImage = images,
+          urlBiography = url_person
+        )
       data <-
         data %>%
-        mutate(hasImage = urlImage %>% str_detect(".jpg"),
-               urlImage = ifelse(hasImage, urlImage, NA)) %>%
-        tidyr::separate(namePerson, sep = ' alias ', into = c('namePerson', 'aliasPerson')) %>%
+        mutate(
+          hasImage = urlImage %>% str_detect(".jpg"),
+          urlImage = ifelse(hasImage, urlImage, NA)
+        ) %>%
+        tidyr::separate(namePerson,
+                        sep = ' alias ',
+                        into = c('namePerson', 'aliasPerson')) %>%
         suppressWarnings()
 
       df <<-
         df %>%
         bind_rows(data)
     }
-    failure <- function(msg){
+    failure <- function(msg) {
       cat(sprintf("Fail: %s (%s)\n", res$url, msg))
     }
     urls %>%
-      walk(function(x){
+      walk(function(x) {
         curl_fetch_multi(url = x, success, failure)
       })
     multi_run()
@@ -652,16 +721,25 @@ parse_nazi_bios <-
     df
   }
 
-#' Get Nazi Data
+#' Get Nazi data
 #'
-#' @param parse_bios
-#' @param tidy_columns
-#' @param return_message
+#' This function scrapes and structures
+#' the list of Nazis who served at Auschwitz.
 #'
-#' @return
+#' @param parse_bios if \code{TRUE} parses the detailed biography pages
+#' @param tidy_columns if \code{TRUE} runs the  \code{\link{tidy_counts}} function
+#' @param return_message if \code{TRUE} return a message after parsing
+#' @references \href{http://pamiec.pl/pa/form/60,Zaloga-SS-KL-Auschwitz.html}{ZAŁOGA SS KL AUSCHWITZ}
+#'
+#' @return a \code{data_frame}
 #' @export
 #' @import httr curl tidyr rvest dplyr stringr lubridate xml2 purrr stringi readr formattable
 #' @examples
+#' \dontrun{
+#' get_nazis(parse_bios = TRUE, tidy_columns = TRUE,
+#' return_message = TRUE)
+#' }
+
 get_nazis <-
   function(parse_bios = TRUE,
            tidy_columns = FALSE,
@@ -673,6 +751,12 @@ get_nazis <-
       parse_search_page(urls = urls)
 
     if (parse_bios) {
+      list(
+        "Please be patient this function can take well over an hour to scrape the ",
+        df_search %>% nrow() %>% formattable::comma(digits = 0),
+        ' biographies'
+      ) %>%
+        purrr::reduce(paste0) %>% message()
       df_bios <-
         df_search$urlBiography %>%
         parse_nazi_bios(return_message = return_message)
@@ -716,9 +800,111 @@ get_nazis <-
     }
 
     if (return_message) {
-      list("Found ", all_data %>% nrow() %>% formattable::comma(digits = 0), ' Nazis in the Auschwitz SS database') %>%
+      list(
+        "Found ",
+        all_data %>% nrow() %>% formattable::comma(digits = 0),
+        ' Nazis in the Auschwitz SS database'
+      ) %>%
         purrr::reduce(paste0) %>%
         message()
     }
     return(all_data)
+  }
+
+
+
+# visualize ---------------------------------------------------------------
+
+#' Visualize Nazi trelliscope
+#'
+#' This function returns a trelliscope display
+#' of the nazi data
+#'
+#' @param data a \code{data_frame}
+#' @param self_contained if \code{TRUE} htmlwidget is self-contained
+#' @param title Title of the trelliscope
+#' @return an \code{htmlwidget} of an interactive
+#' \code{trelliscope} display
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' nazihuntR::import_nazis(table_name = 'all') %>%
+#' visualize_nazis()
+#' }
+visualize_nazis <-
+  function(data, self_contained = FALSE,
+           title = NULL) {
+    has_multiple <-
+      table(data$urlBiography) %>% max(na.rm = TRUE) > 1
+
+    df_ids <-
+      data %>%
+      select(urlBiography) %>%
+      distinct() %>%
+      mutate(idPerson = 1:n())
+
+    if (title %>% purrr::is_null()) {
+      title <-
+        "nazihuntR Nazi Explorer"
+    }
+    if ('yearBirth' %in% names(data)) {
+      data <-
+        data %>%
+        mutate_at(c('yearBirth'),
+                  funs(. %>% as.character()))
+
+    }
+
+    if (has_multiple) {
+      data <-
+        data %>%
+        mutate(panel = trelliscopejs::img_panel(urlImage)) %>%
+        left_join(df_ids) %>%
+        suppressMessages() %>%
+        arrange(desc(hasImage)) %>%
+        group_by(nameActualPerson, urlBiography) %>%
+        mutate(idPerson = 1:n()) %>%
+        ungroup() %>%
+        select(idPerson, everything()) %>%
+        trelliscopejs::trelliscope(
+          name = title,
+          self_contained = self_contained,
+          nrow = 1,
+          ncol = 3,
+          state = list(
+            labels = c(
+              'nameActualPerson',
+              'dateBirth',
+              'descriptionOccupation',
+              'urlBiography',
+              'countryNationality'
+            )
+          )
+        )
+    }
+    if (!has_multiple) {
+      data <-
+        data %>%
+        mutate(panel = trelliscopejs::img_panel(urlImage)) %>%
+        left_join(df_ids) %>%
+        arrange(desc(hasImage), desc(dateBirth)) %>%
+        select(idPerson, everything()) %>%
+        suppressMessages() %>%
+        trelliscopejs::trelliscope(
+          self_contained = self_contained,
+          name = title,
+          nrow = 1,
+          ncol = 3,
+          state = list(
+            labels = c(
+              "nameActualPerson",
+              'dateBirth',
+              'urlBiography',
+              'countryNationality'
+            )
+          )
+        )
+    }
+    return(data)
   }
