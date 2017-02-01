@@ -1,0 +1,25 @@
+Package: nazihuntR
+Type: Package
+Title: API wrapper for SS Auschwitz personnel records
+Description: API wrapper for SS Auschwitz personnel records
+Version: 0.1
+Authors@R: person("Alex", "Bresler", email = "abresler@asbcllc.com", role = c("aut", "cre"))
+Maintainer: Alex Bresler <abresler@asbcllc.com>
+URL: https://github.com/abresler/nazihuntR
+BugReports: https://github.com/abresler/nazihuntR/issues
+License: AGPL
+Suggests:
+    testthat
+LazyData: true
+Depends:
+    R (>= 3.2.0)
+Imports:
+  curl,
+  dplyr,
+  tidyr,
+  xml2,
+  rvest,
+  stringr,
+  stringi,
+  lubridate
+RoxygenNote: 6.0.0

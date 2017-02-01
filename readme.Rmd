@@ -1,0 +1,36 @@
+---
+  output: rmarkdown::github_document
+---
+  
+  `nazihuntR` : Tools to explore ZAŁOGA SS KL AUSCHWITZ data-store which containing information the nearly 10,000 soliders who worked at Auschwitz.
+
+Ref: <http://pamiec.pl/>
+
+### Installation
+
+```{r eval=FALSE}
+devtools::install_github("abresler/nazihuntR")
+```
+
+```{r message=FALSE, warning=FALSE, error=FALSE}
+options(width=120)
+```
+
+### Usage
+
+```{r message=FALSE, warning=FALSE, error=FALSE}
+library(nazihuntR)
+df_all <- 
+nazihuntR::import_nazi_data(table_name = 'all') # returns cached table of all nazi data
+
+df_names  <- 
+nazihuntR::import_nazi_data(table_name = 'names') # returns cached table of all nazi names
+
+df_items  <- 
+nazihuntR::import_nazi_data(table_name = 'items') # returns cached table of all nazi fields with multiple items
+
+df_scrape_data <-
+  nazihuntR::get_nazis(parse_bios = TRUE, tidy_columns = FALSE, return_message = TRUE) # scrapes all data - can take up to an hour
+
+```
+
