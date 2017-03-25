@@ -1,12 +1,12 @@
-Package: nazihuntR
+Package: entitySearchR
 Type: Package
-Title: Tools to explore Nazi SS Auschwitz personnel records
-Description: Tools to explore Nazi SS Auschwitz personnel records
-Version: 0.1
+Title: Tools to explore legal entities
+Description: Tools to explore legal entities
+Version: 0.11
 Authors@R: person("Alex", "Bresler", email = "abresler@asbcllc.com", role = c("aut", "cre"))
 Maintainer: Alex Bresler <abresler@asbcllc.com>
-URL: https://github.com/abresler/nazihuntR
-BugReports: https://github.com/abresler/nazihuntR/issues
+URL: https://github.com/abresler/entitySearchR
+BugReports: https://github.com/abresler/entitySearchR/issues
 License: AGPL
 Suggests:
     testthat
@@ -24,4 +24,4 @@ Imports:
   lubridate,
   formattable,
   trelliscopejs
-RoxygenNote: 6.0.0
+RoxygenNote: 6.0.1

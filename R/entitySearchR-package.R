@@ -1,6 +1,6 @@
-#' API wrapper for SS Auschwitz personnel records
+#' API wrappers for legal entity searches
 #'
-#' @name nazihunter
+#' @name entitySearchR
 #' @source http://pamiec.pl/pa/form/60,Zaloga-SS-KL-Auschwitz.html
 #' @docType package
 #' @author Alex Bresler (abresler@asbcllc.com)
